@@ -6,6 +6,18 @@
   body {
     @apply bg-gradient-to-br from-pink-50 via-white to-indigo-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900;
     @apply min-h-screen transition-colors duration-300;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  /* 优化移动端触摸滚动 */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+  
+  /* 优化文本选择 */
+  ::selection {
+    @apply bg-pink-200/50 dark:bg-pink-800/50;
   }
 }
 
@@ -80,4 +92,116 @@
 @keyframes bounce {
   0%, 80%, 100% { transform: scale(0); }
   40% { transform: scale(1); }
+}
+
+/* 骨架屏动画 */
+.skeleton {
+  @apply bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700;
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* 优化过渡效果 */
+.page-enter-active,
+.page-leave-active {
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.page-enter-from {
+  opacity: 0;
+  transform: translateX(20px);
+}
+
+.page-leave-to {
+  opacity: 0;
+  transform: translateX(-20px);
+}
+
+/* 列表项交错动画优化 */
+.stagger-item {
+  animation: staggerIn 0.4s ease-out both;
+}
+
+@keyframes staggerIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 脉冲动画（用于重点提示） */
+.pulse-soft {
+  animation: pulseSoft 2s ease-in-out infinite;
+}
+
+@keyframes pulseSoft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* 悬浮卡片增强 */
+.card-hover {
+  @apply hover:shadow-xl hover:-translate-y-1;
+}
+
+/* 优化长文本显示 */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+}
+
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+}
+
+/* 安全区域适配 - 适配 iPhone X 及以上机型的底部导航 */
+.safe-area-pb {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+/* 隐藏滚动条但保持滚动功能 */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* 优化触摸反馈 */
+@media (hover: none) {
+  .card-hover:active {
+    transform: scale(0.98);
+  }
+  
+  button:active {
+    opacity: 0.8;
+  }
+}
+
+/* 优化输入框聚焦时的视觉反馈 */
+input:focus,
+textarea:focus {
+  @apply ring-2 ring-pink-200 dark:ring-pink-800;
+}
+
+/* 页面过渡优化 */
+#app {
+  overflow-x: hidden;
 }
