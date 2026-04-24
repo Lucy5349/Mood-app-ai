@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useDiaryStore } from '@/stores/diary'
 import { useAuthStore } from '@/stores/auth'
@@ -137,6 +137,84 @@ async function handleAvatarChange(event: Event) {
     isUploadingAvatar.value = false
     target.value = '' // 清空输入，允许重复选择同一文件
   }
+}
+
+// 日历相关
+const currentDate = ref(new Date())
+const calendarYear = computed(() => currentDate.value.getFullYear())
+const calendarMonth = computed(() => currentDate.value.getMonth())
+
+// 构建日历数据：返回6行7列的日期数组
+const calendarDays = computed(() => {
+  const year = calendarYear.value
+  const month = calendarMonth.value
+  const firstDay = new Date(year, month, 1).getDay() // 第一天是周几
+  const daysInMonth = new Date(year, month + 1, 0).getDate()
+  const prevMonthDays = new Date(year, month, 0).getDate()
+
+  // 构建 date => score 映射
+  const scoreMap: Record<string, number> = {}
+  store.diaries.forEach(d => {
+    if (d.date && d.score !== undefined) {
+      scoreMap[d.date] = d.score
+    }
+  })
+
+  const days: { date: number; currentMonth: boolean; score?: number; dateStr: string }[] = []
+
+  // 上月填充
+  for (let i = firstDay - 1; i >= 0; i--) {
+    const d = prevMonthDays - i
+    const m = month === 0 ? 12 : month
+    const y = month === 0 ? year - 1 : year
+    const dateStr = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+    days.push({ date: d, currentMonth: false, score: scoreMap[dateStr], dateStr })
+  }
+
+  // 本月
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+    days.push({ date: d, currentMonth: true, score: scoreMap[dateStr], dateStr })
+  }
+
+  // 下月填充（补齐6行）
+  const remaining = 42 - days.length
+  for (let d = 1; d <= remaining; d++) {
+    const m = month === 11 ? 1 : month + 2
+    const y = month === 11 ? year + 1 : year
+    const dateStr = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`
+    days.push({ date: d, currentMonth: false, score: scoreMap[dateStr], dateStr })
+  }
+
+  return days
+})
+
+const weekDays = ['S', 'M', 'T', 'W', 'T', 'F', 'S']
+
+function prevMonth() {
+  const d = new Date(currentDate.value)
+  d.setMonth(d.getMonth() - 1)
+  currentDate.value = d
+}
+
+function nextMonth() {
+  const d = new Date(currentDate.value)
+  d.setMonth(d.getMonth() + 1)
+  currentDate.value = d
+}
+
+function isToday(day: { date: number; currentMonth: boolean; dateStr: string }) {
+  const today = new Date().toISOString().split('T')[0]
+  return day.currentMonth && day.dateStr === today
+}
+
+// 评分对应的背景颜色 - 圆形背景
+function getScoreBgStyle(score?: number) {
+  if (score === undefined) return ''
+  if (score >= 70) return 'background-color: rgb(16 185 129 / 0.25)'
+  if (score >= 50) return 'background-color: rgb(245 158 11 / 0.25)'
+  if (score >= 30) return 'background-color: rgb(249 115 22 / 0.25)'
+  return 'background-color: rgb(239 68 68 / 0.25)'
 }
 
 // Todo 功能
@@ -376,7 +454,7 @@ function handleTodoKeydown(e: KeyboardEvent) {
       </div>
 
       <!-- 最近日记 -->
-      <div class="card p-5 animate-slide-up" style="animation-delay: 250ms">
+      <div class="card p-5 animate-slide-up mb-4" style="animation-delay: 250ms">
         <div class="flex items-center justify-between mb-4">
           <h3 class="font-medium text-gray-800 dark:text-white">最近日记</h3>
           <button 
@@ -428,6 +506,49 @@ function handleTodoKeydown(e: KeyboardEvent) {
           <button @click="router.push('/editor')" class="btn-secondary mt-4">
             写第一篇日记
           </button>
+        </div>
+      </div>
+
+      <!-- 情绪日历 -->
+      <div class="card p-5 mb-5 animate-slide-up" style="animation-delay: 50ms">
+        <div class="flex items-center justify-between mb-4">
+          <button @click="prevMonth" class="w-9 h-9 rounded-full flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-400 text-lg">
+            ‹
+          </button>
+          <h3 class="text-base font-semibold text-gray-800 dark:text-white tracking-wide">
+            {{ calendarYear }}年 {{ calendarMonth + 1 }}月
+          </h3>
+          <button @click="nextMonth" class="w-9 h-9 rounded-full flex items-center justify-center hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors text-gray-400 text-lg">
+            ›
+          </button>
+        </div>
+        <!-- 星期标题 -->
+        <div class="grid grid-cols-7 mb-2">
+          <div v-for="(w, i) in weekDays" :key="i" class="text-center text-xs font-medium py-1"
+            :class="i === 0 || i === 6 ? 'text-gray-300 dark:text-gray-600' : 'text-gray-400 dark:text-gray-500'"
+          >
+            {{ w }}
+          </div>
+        </div>
+        <!-- 日期格子 -->
+        <div class="grid grid-cols-7 gap-y-1">
+          <div
+            v-for="(day, idx) in calendarDays"
+            :key="idx"
+            class="relative flex items-center justify-center"
+          >
+            <div
+              class="w-9 h-9 flex items-center justify-center rounded-full text-xs transition-all"
+              :class="[
+                day.currentMonth ? 'text-gray-700 dark:text-gray-200' : 'text-gray-300 dark:text-gray-600',
+                isToday(day) && day.score === undefined ? 'bg-pink-500 text-white font-bold' : '',
+                isToday(day) && day.score !== undefined ? 'font-bold ring-2 ring-pink-500' : ''
+              ]"
+              :style="getScoreBgStyle(day.score)"
+            >
+              {{ day.date }}
+            </div>
+          </div>
         </div>
       </div>
     </main>
