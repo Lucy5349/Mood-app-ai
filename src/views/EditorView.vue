@@ -2,7 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useDiaryStore } from '@/stores/diary'
-import { type MoodTag } from '@/types/diary'
+import { moodMapping, type MoodTag } from '@/types/diary'
 
 const router = useRouter()
 const route = useRoute()
@@ -28,49 +28,10 @@ const moodTags: { value: MoodTag; label: string; emoji: string; synonyms: string
   { value: 'angry', label: '生气', emoji: '😠', synonyms: ['angry', 'irritated', 'frustrated'] }
 ]
 
-// 中文到英文的 mood 映射
-const moodZhToEn: Record<string, MoodTag> = {
-  '难过': 'sad',
-  '焦虑': 'anxious',
-  '平静': 'calm',
-  '开心': 'happy',
-  '生气': 'angry'
-}
-
 // 是否可以提交
 const canSubmit = computed(() => {
   return content.value.trim().length >= 10 && aiResult.value !== null
 })
-
-// 当前心情对应的 emoji（根据 AI 分析结果或用户选择）
-const currentMoodEmoji = computed(() => {
-  if (aiResult.value) {
-    const mood = aiResult.value.mood
-    // 1. 先尝试中文直译匹配
-    const moodEn = moodZhToEn[mood]
-    if (moodEn) {
-      const matched = moodTags.find(t => t.value === moodEn)
-      if (matched) return matched.emoji
-    }
-    // 2. 再尝试英文同义词匹配（AI 可能返回 sorrowful, joyful 等）
-    const lowerMood = mood.toLowerCase()
-    for (const tag of moodTags) {
-      if (tag.synonyms.some(syn => syn.toLowerCase() === lowerMood)) {
-        return tag.emoji
-      }
-    }
-    // 3. 最后尝试直接匹配英文标签
-    const directMatch = moodTags.find(t => t.value.toLowerCase() === lowerMood)
-    return directMatch?.emoji || '❓'
-  }
-  const matched = moodTags.find(t => t.value === selectedMood.value)
-  return matched?.emoji || '❓'
-})
-
-// 选择心情标签
-const selectMood = (mood: string) => {
-  selectedMood.value = mood
-}
 
 // AI 分析
 const handleAnalyze = async () => {
@@ -82,7 +43,18 @@ const handleAnalyze = async () => {
   try {
     const result = await store.analyzeMood(content.value)
     aiResult.value = result
-    selectedMood.value = result.mood
+    // 将 AI 返回的中文 mood 转换为英文
+    const moodEn = moodMapping[result.mood]
+    if (moodEn) {
+      selectedMood.value = moodEn
+    } else {
+      // 尝试通过同义词匹配
+      const lowerMood = result.mood.toLowerCase()
+      const matched = moodTags.find(t => 
+        t.synonyms.some(syn => syn.toLowerCase() === lowerMood) || t.value.toLowerCase() === lowerMood
+      )
+      if (matched) selectedMood.value = matched.value
+    }
   } catch (e) {
     console.error(e)
   }
@@ -104,7 +76,7 @@ const handleSubmit = async () => {
   })
 
   if (diary) {
-    router.push(`/detail/${diary._id}`)
+    router.push('/history')
   }
 }
 
@@ -157,20 +129,22 @@ onMounted(async () => {
     <!-- 页面内容 -->
     <main class="max-w-2xl mx-auto px-4 py-5">
       <!-- 日期选择 -->
-      <div class="mb-5 animate-fade-in">
+      <div class="mb-5">
         <label class="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2 flex items-center gap-2">
           <span>📅</span>
           <span>选择日期</span>
         </label>
-        <input 
-          v-model="selectedDate"
-          type="date" 
-          class="input-field text-sm"
-        />
+        <div class="date-picker-wrapper">
+          <input 
+            v-model="selectedDate"
+            type="date" 
+            class="date-picker"
+          />
+        </div>
       </div>
 
       <!-- 心情标签选择 -->
-      <div class="mb-5 animate-fade-in" style="animation-delay: 80ms">
+      <div class="mb-5">
         <label class="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-3 flex items-center gap-2">
           <span>💭</span>
           <span>当前心情</span>
@@ -179,22 +153,22 @@ onMounted(async () => {
           <button
             v-for="tag in moodTags"
             :key="tag.value"
-            @click="selectMood(tag.value)"
+            @click="selectedMood = tag.value"
             class="mood-tag flex items-center gap-2 px-4 py-2.5"
             :class="[
-              selectedMood === tag.value 
-                ? 'ring-2 ring-pink-500 bg-pink-50 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400' 
+              selectedMood === tag.value
+                ? 'ring-2 ring-pink-500 bg-pink-50 dark:bg-pink-900/30 text-pink-600 dark:text-pink-400'
                 : 'bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300'
             ]"
           >
-            <span class="text-lg">{{ currentMoodEmoji }}</span>
+            <span class="text-lg">{{ tag.emoji }}</span>
             <span class="text-sm font-medium">{{ tag.label }}</span>
           </button>
         </div>
       </div>
 
       <!-- 日记内容 -->
-      <div class="mb-5 animate-fade-in" style="animation-delay: 160ms">
+      <div class="mb-5">
         <label class="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-2 flex items-center gap-2">
           <span>✍️</span>
           <span>写下今天的故事</span>
@@ -214,12 +188,12 @@ onMounted(async () => {
       </div>
 
       <!-- AI 分析按钮 -->
-      <div class="mb-5 animate-fade-in" style="animation-delay: 240ms">
+      <div class="mb-5">
         <button
           @click="handleAnalyze"
           :disabled="store.isLoading || content.trim().length < 10"
-          class="w-full py-3.5 rounded-xl bg-gradient-to-r from-pink-500 to-purple-500 text-white font-medium shadow-lg shadow-pink-200/50 dark:shadow-pink-900/30 hover:shadow-xl hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-          :class="{ 'opacity-50 cursor-not-allowed scale-100': store.isLoading || content.trim().length < 10 }"
+          class="w-full py-3.5 rounded-xl bg-gradient-to-r from-pink-500 to-purple-500 text-white font-medium shadow-lg shadow-pink-200/50 dark:shadow-pink-900/30 flex items-center justify-center gap-2"
+          :class="{ 'opacity-50 cursor-not-allowed': store.isLoading || content.trim().length < 10 }"
         >
           <span v-if="store.isLoading" class="flex items-center gap-2">
             <span class="loading-dot"></span>
@@ -235,7 +209,7 @@ onMounted(async () => {
       </div>
 
       <!-- AI 分析结果 -->
-      <div v-if="aiResult" class="card p-5 mb-5 animate-bounce-in">
+      <div v-if="aiResult" class="card p-5 mb-5">
         <div class="flex items-center justify-between mb-4">
           <div class="flex items-center gap-3">
             <h3 class="font-medium text-gray-800 dark:text-white">✨ AI 情绪分析</h3>
@@ -271,7 +245,7 @@ onMounted(async () => {
       </div>
 
       <!-- 提交按钮 -->
-      <div class="animate-fade-in" style="animation-delay: 320ms">
+      <div>
         <button
           @click="handleSubmit"
           :disabled="!canSubmit"
@@ -289,5 +263,32 @@ onMounted(async () => {
       <!-- 底部留白 -->
       <div class="h-4"></div>
     </main>
+
+    <!-- 底部导航 -->
+    <nav class="fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-gray-900/90 backdrop-blur-md border-t border-gray-100 dark:border-gray-800 safe-area-pb">
+      <div class="max-w-2xl mx-auto flex">
+        <button 
+          @click="router.push('/')"
+          class="flex-1 py-3 flex flex-col items-center gap-1 text-gray-400 transition-colors"
+        >
+          <span class="text-xl">🏠</span>
+          <span class="text-xs">首页</span>
+        </button>
+        <button 
+          @click="router.push('/editor')"
+          class="flex-1 py-3 flex flex-col items-center gap-1 text-pink-500"
+        >
+          <span class="text-xl">✏️</span>
+          <span class="text-xs">写日记</span>
+        </button>
+        <button 
+          @click="router.push('/history')"
+          class="flex-1 py-3 flex flex-col items-center gap-1 text-gray-400 transition-colors"
+        >
+          <span class="text-xl">📖</span>
+          <span class="text-xs">历史</span>
+        </button>
+      </div>
+    </nav>
   </div>
 </template>

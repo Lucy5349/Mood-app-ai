@@ -139,16 +139,6 @@ function handleTodoKeydown(e: KeyboardEvent, diaryId: string, date: string) {
   }
 }
 
-// 获取日记 ID（兼容 _id 和 id）
-function getDiaryId(diary: DiaryItem): string {
-  return diary._id || diary.id || ''
-}
-
-// 获取日记日期
-function getDiaryDate(diary: DiaryItem): string {
-  return diary.date || ''
-}
-
 // 根据 moodTag（中文）获取对应的 emoji
 function getMoodEmoji(moodTag: string): string {
   const moodEn = moodMapping[moodTag] || moodTag
@@ -190,7 +180,7 @@ function getMoodEmoji(moodTag: string): string {
       </div>
 
       <!-- 心情筛选 -->
-      <div class="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 animate-fade-in scrollbar-hide" style="animation-delay: 100ms">
+      <div class="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 animate-fade-in scrollbar-hide" style="animation-delay: 150ms">
         <button
           v-for="filter in moodFilters"
           :key="filter.value"
@@ -234,7 +224,7 @@ function getMoodEmoji(moodTag: string): string {
         
         <div v-for="(diaries, month) in groupedDiaries" :key="month" class="mb-6">
           <!-- 月份标题 -->
-          <div class="sticky top-14 z-10 py-2 bg-gradient-to-b from-white/95 to-white/80 dark:from-gray-900/95 dark:to-gray-900/80 backdrop-blur-sm">
+          <div class="sticky top-14 z-10 py-2 px-3 bg-white/60 mb-2 dark:bg-gray-900/60 backdrop-blur-md border border-white/20 dark:border-gray-700/30 rounded-xl shadow-sm">
             <div class="flex items-center gap-2">
               <h3 class="text-sm font-medium text-gray-600 dark:text-gray-400">
                 {{ formatMonth(month) }}
@@ -243,16 +233,15 @@ function getMoodEmoji(moodTag: string): string {
                 {{ diaries.length }}篇
               </span>
             </div>
-          </div>
+          </div> 
 
           <!-- 日记卡片 -->
           <div class="space-y-3">
             <div 
               v-for="(diary, index) in diaries" 
-              :key="getDiaryId(diary)"
-              @click="router.push(`/detail/${getDiaryId(diary)}`)"
+              :key="diary._id || diary.id"
+              @click="router.push(`/detail/${diary._id || diary.id}`)"
               class="card p-4 cursor-pointer hover:shadow-lg transition-all duration-300 card-hover animate-slide-up"
-              :style="{ animationDelay: `${index * 50}ms` }"
             >
               <div class="flex items-start justify-between gap-3">
                 <div class="flex-1 min-w-0">
@@ -281,21 +270,21 @@ function getMoodEmoji(moodTag: string): string {
               <!-- 操作按钮 -->
               <div class="flex gap-1 mt-3 pt-3 border-t border-gray-100 dark:border-gray-700">
                 <button 
-                  @click.stop="router.push(`/editor?edit=${getDiaryId(diary)}`)"
+                  @click.stop="router.push(`/editor?edit=${diary._id || diary.id}`)"
                   class="flex-1 py-2 text-xs text-gray-500 hover:text-pink-500 hover:bg-pink-50 dark:hover:bg-pink-900/20 rounded-lg transition-colors flex items-center justify-center gap-1"
                 >
                   <span>✏️</span>
                   <span>编辑</span>
                 </button>
-                <button 
-                  @click.stop="toggleTodoExpand(getDiaryId(diary))"
+                <button
+                  @click.stop="toggleTodoExpand(diary._id || diary.id || '')"
                   class="flex-1 py-2 text-xs text-gray-500 hover:text-pink-500 hover:bg-pink-50 dark:hover:bg-pink-900/20 rounded-lg transition-colors flex items-center justify-center gap-1"
                 >
                   <span>✅</span>
                   <span>清单</span>
                 </button>
                 <button 
-                  @click.stop="handleDelete(getDiaryId(diary))"
+                  @click.stop="handleDelete(diary._id || diary.id || '')"
                   class="flex-1 py-2 text-xs text-gray-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors flex items-center justify-center gap-1"
                 >
                   <span>🗑️</span>
@@ -305,7 +294,7 @@ function getMoodEmoji(moodTag: string): string {
 
               <!-- TODO 展开面板 -->
               <div 
-                v-if="expandedTodoId === getDiaryId(diary) && getDiaryDate(diary)"
+                v-if="expandedTodoId === (diary._id || diary.id) && diary.date"
                 class="mt-3 pt-3 border-t border-gray-100 dark:border-gray-700 animate-fade-in"
                 @click.stop
               >
@@ -315,9 +304,9 @@ function getMoodEmoji(moodTag: string): string {
                 </p>
                 
                 <!-- 已有 TODO 列表 -->
-                <div v-if="getDiaryTodos(getDiaryDate(diary)).length > 0" class="space-y-1 mb-3 max-h-32 overflow-y-auto">
+                <div v-if="getDiaryTodos(diary.date).length > 0" class="space-y-1 mb-3 max-h-32 overflow-y-auto">
                   <div 
-                    v-for="todo in getDiaryTodos(getDiaryDate(diary))" 
+                    v-for="todo in getDiaryTodos(diary.date)" 
                     :key="todo.id"
                     class="flex items-center gap-2 p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50 group"
                   >
@@ -345,14 +334,14 @@ function getMoodEmoji(moodTag: string): string {
                 <!-- 添加已完成 TODO 输入框 -->
                 <div class="flex gap-2">
                   <input
-                    v-model="todoInputs[getDiaryId(diary)]"
-                    @keydown="(e) => handleTodoKeydown(e, getDiaryId(diary), getDiaryDate(diary))"
+                    v-model="todoInputs[diary._id || diary.id || '']"
+                    @keydown="(e) => handleTodoKeydown(e, diary._id || diary.id || '', diary.date || '')"
                     type="text"
                     class="input-field flex-1 text-xs py-2"
                     placeholder="添加已完成的任务..."
                   />
                   <button 
-                    @click.stop="addCompletedTodo(getDiaryId(diary), getDiaryDate(diary))"
+                    @click.stop="addCompletedTodo(diary._id || diary.id || '', diary.date || '')"
                     class="px-3 py-2 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors text-sm flex-shrink-0"
                   >
                     ✓

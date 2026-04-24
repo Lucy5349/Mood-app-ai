@@ -61,6 +61,35 @@
   .mood-calm { @apply bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400; }
   .mood-happy { @apply bg-pink-100 text-pink-600 dark:bg-pink-900/30 dark:text-pink-400; }
   .mood-angry { @apply bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400; }
+
+  /* 日期选择器包装器 */
+  .date-picker-wrapper {
+    @apply relative flex items-center;
+  }
+
+  .date-picker-icon {
+    @apply absolute left-4 text-lg pointer-events-none z-10;
+  }
+
+  .date-picker {
+    @apply w-full pl-11 pr-4 py-3 bg-white dark:bg-gray-700 rounded-xl;
+    @apply border-2 border-gray-200 dark:border-gray-600;
+    @apply focus:border-pink-400 dark:focus:border-pink-500 focus:ring-2 focus:ring-pink-200 dark:focus:ring-pink-800;
+    @apply outline-none transition-all duration-300;
+    @apply text-gray-800 dark:text-gray-100 text-sm font-medium;
+    @apply cursor-pointer hover:border-pink-300 dark:hover:border-pink-500;
+    color-scheme: light dark;
+  }
+
+  /* 日期选择器日历图标 */
+  .date-picker::-webkit-calendar-picker-indicator {
+    @apply w-5 h-5 cursor-pointer opacity-60 hover:opacity-100 transition-opacity ml-2;
+    filter: invert(0.5);
+  }
+
+  .dark .date-picker::-webkit-calendar-picker-indicator {
+    filter: invert(0.8);
+  }
 }
 
 /* 自定义滚动条 */
@@ -94,11 +123,11 @@
   40% { transform: scale(1); }
 }
 
-/* 骨架屏动画 */
+/* 骨架屏动画 - 更缓慢 */
 .skeleton {
   @apply bg-gradient-to-r from-gray-200 via-gray-100 to-gray-200 dark:from-gray-700 dark:via-gray-600 dark:to-gray-700;
   background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
+  animation: shimmer 2.5s ease-in-out infinite;
 }
 
 @keyframes shimmer {
@@ -106,37 +135,23 @@
   100% { background-position: 200% 0; }
 }
 
-/* 优化过渡效果 */
+/* 优化过渡效果 - 更缓慢自然 */
 .page-enter-active,
 .page-leave-active {
-  transition: opacity 0.25s ease, transform 0.25s ease;
+  transition: opacity 0.5s ease, transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .page-enter-from {
   opacity: 0;
-  transform: translateX(20px);
+  transform: translateX(30px);
 }
 
 .page-leave-to {
   opacity: 0;
-  transform: translateX(-20px);
+  transform: translateX(-30px);
 }
 
-/* 列表项交错动画优化 */
-.stagger-item {
-  animation: staggerIn 0.4s ease-out both;
-}
-
-@keyframes staggerIn {
-  from {
-    opacity: 0;
-    transform: translateY(12px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
+/* 列表项交错动画 - 已关闭 */
 
 /* 脉冲动画（用于重点提示） */
 .pulse-soft {

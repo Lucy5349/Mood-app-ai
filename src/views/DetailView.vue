@@ -33,14 +33,6 @@ const getScoreDescription = (score: number) => {
   return '情绪平静'
 }
 
-// 获取情绪进度条颜色（强度越高越红）
-const getProgressColor = (score: number) => {
-  if (score >= 70) return 'from-red-400 to-red-500'
-  if (score >= 50) return 'from-orange-400 to-orange-500'
-  if (score >= 30) return 'from-amber-400 to-amber-500'
-  return 'from-emerald-400 to-emerald-500'
-}
-
 // 编辑日记
 const startEdit = () => {
   editedContent.value = diary.value!.content
@@ -180,7 +172,7 @@ onMounted(async () => {
       </div>
 
       <!-- 日记内容 -->
-      <div class="card p-5 mb-4 animate-slide-up" style="animation-delay: 80ms">
+      <div class="card p-5 mb-4 animate-slide-up" style="animation-delay: 150ms">
         <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3 flex items-center gap-2">
           <span>📖</span>
           <span>日记内容</span>
@@ -203,7 +195,7 @@ onMounted(async () => {
       </div>
 
       <!-- 当日完成清单 -->
-      <div v-if="dayTodos.length > 0" class="card p-5 mb-4 animate-slide-up" style="animation-delay: 120ms">
+      <div v-if="dayTodos.length > 0" class="card p-5 mb-4 animate-slide-up" style="animation-delay: 250ms">
         <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3 flex items-center gap-2">
           <span>✅</span>
           <span>当日完成</span>
@@ -215,8 +207,7 @@ onMounted(async () => {
           <div 
             v-for="(todo, index) in dayTodos" 
             :key="todo.id"
-            class="flex items-center gap-3 p-2.5 rounded-xl bg-gray-50 dark:bg-gray-700/50 stagger-item"
-            :style="{ animationDelay: `${index * 50}ms` }"
+            class="flex items-center gap-3 p-2.5 rounded-xl bg-gray-50 dark:bg-gray-700/50"
           >
             <div 
               class="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0"
@@ -237,7 +228,7 @@ onMounted(async () => {
       </div>
 
       <!-- 治愈语录 -->
-      <div v-if="diary.aiAnalyze" class="card p-5 mb-4 animate-slide-up" style="animation-delay: 160ms">
+      <div v-if="diary.aiAnalyze" class="card p-5 mb-4 animate-slide-up" style="animation-delay: 350ms">
         <div class="flex items-center justify-between mb-3">
           <h3 class="text-sm font-medium text-gray-500 dark:text-gray-400 flex items-center gap-2">
             <span>💝</span>
@@ -257,7 +248,7 @@ onMounted(async () => {
       </div>
 
       <!-- 操作按钮 -->
-      <div class="flex gap-3 animate-slide-up" style="animation-delay: 200ms">
+      <div class="flex gap-3 animate-slide-up" style="animation-delay: 450ms">
         <button 
           v-if="isEditing"
           @click="isEditing = false"
@@ -275,7 +266,7 @@ onMounted(async () => {
       </div>
 
       <!-- 元信息 -->
-      <div class="mt-6 text-center text-xs text-gray-400 dark:text-gray-500 animate-fade-in" style="animation-delay: 280ms">
+      <div class="mt-6 text-center text-xs text-gray-400 dark:text-gray-500 animate-fade-in" style="animation-delay: 550ms">
         <p>创建于 {{ diary.createdAt }}</p>
         <p v-if="diary.updatedAt !== diary.createdAt" class="mt-1">更新于 {{ diary.updatedAt }}</p>
       </div>
