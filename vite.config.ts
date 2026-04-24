@@ -10,11 +10,24 @@ export default defineConfig({
     }
   },
   server: {
+    port: 5173,
     proxy: {
       '/api/ark': {
         target: 'https://ark.cn-beijing.volces.com/api/v3',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api\/ark/, '')
+      }
+    }
+  },
+  build: {
+    outDir: 'dist',
+    assetsDir: 'assets',
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vant': ['vant']
+        }
       }
     }
   }
