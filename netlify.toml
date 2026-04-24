@@ -1,7 +1,6 @@
 [build]
-  command = "npm run build"
+  command = "vite build"
   publish = "dist"
-  node_bundler = "esbuild"
 
 [[redirects]]
   from = "/*"
