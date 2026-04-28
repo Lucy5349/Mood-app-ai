@@ -4,7 +4,7 @@ import { useRouter } from 'vue-router'
 import { useDiaryStore } from '@/stores/diary'
 import { useAuthStore } from '@/stores/auth'
 import { useTodoStore } from '@/stores/todo'
-import { moodConfig, moodMapping, type MoodTag } from '@/types/diary'
+import { moodConfig, inferMoodLabel, type MoodTag } from '@/types/diary'
 
 const router = useRouter()
 const store = useDiaryStore()
@@ -75,7 +75,12 @@ function getMoodBgClass(mood: MoodTag) {
 
 // 获取有效的 MoodTag（从字符串转换）
 function getMoodTag(mood: string): MoodTag {
-  return moodMapping[mood] || 'calm'
+  // 如果已经是有效的英文标签，直接返回
+  if (['sad', 'anxious', 'calm', 'happy', 'angry'].includes(mood)) {
+    return mood as MoodTag
+  }
+  // 否则通过映射表进行包含匹配
+  return inferMoodLabel(mood)
 }
 
 onMounted(() => {

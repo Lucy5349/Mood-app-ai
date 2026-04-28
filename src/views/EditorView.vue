@@ -2,7 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useDiaryStore } from '@/stores/diary'
-import { moodMapping, type MoodTag } from '@/types/diary'
+import { inferMoodLabel, type MoodTag } from '@/types/diary'
 
 const router = useRouter()
 const route = useRoute()
@@ -43,18 +43,8 @@ const handleAnalyze = async () => {
   try {
     const result = await store.analyzeMood(content.value)
     aiResult.value = result
-    // 将 AI 返回的中文 mood 转换为英文
-    const moodEn = moodMapping[result.mood]
-    if (moodEn) {
-      selectedMood.value = moodEn
-    } else {
-      // 尝试通过同义词匹配
-      const lowerMood = result.mood.toLowerCase()
-      const matched = moodTags.find(t => 
-        t.synonyms.some(syn => syn.toLowerCase() === lowerMood) || t.value.toLowerCase() === lowerMood
-      )
-      if (matched) selectedMood.value = matched.value
-    }
+    // 将 AI 返回的中文 mood 转换为英文（使用包含匹配，支持复合词如"愉悦满足"）
+    selectedMood.value = inferMoodLabel(result.mood)
   } catch (e) {
     console.error(e)
   }
